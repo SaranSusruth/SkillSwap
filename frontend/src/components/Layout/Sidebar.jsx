@@ -7,7 +7,6 @@
 import React from 'react'
 import { Home, Compass, MessageSquare, FileText, Activity, Users, LogOut, X, UserCircle2, MessageCircle } from 'lucide-react'
 import { useAppStore } from '../../context/appStore'
-import BrandLogo from '../BrandLogo'
 
 const Sidebar = ({ isOpen, onClose, onNavigate }) => {
   const { currentUser, logout } = useAppStore()
@@ -36,7 +35,7 @@ const Sidebar = ({ isOpen, onClose, onNavigate }) => {
       {/* Mobile Sidebar - Fixed overlay */}
       <aside className={`fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-slate-50 to-white border-r-2 border-slate-300 p-4 overflow-y-auto transition-all duration-300 ease-in-out z-30 lg:hidden ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-between mb-6">
-          <BrandLogo textSize="text-lg" />
+          <h1 className="text-lg font-bold text-slate-800">SkillSwap</h1>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-200 transition-colors">
             <X size={20} className="text-slate-700" />
           </button>
@@ -118,7 +117,7 @@ const Sidebar = ({ isOpen, onClose, onNavigate }) => {
       {/* Desktop Sidebar - Relative / inline in layout */}
       <aside className="hidden lg:flex lg:flex-col w-64 bg-gradient-to-b from-slate-50 to-white border-r-2 border-slate-300 p-4 overflow-y-auto h-screen">
         <div className="flex items-center justify-between mb-6">
-          <BrandLogo textSize="text-lg" />
+          <h1 className="text-lg font-bold text-slate-800">SkillSwap</h1>
         </div>
 
         {/* User Profile Card with Avatar */}
