@@ -1,0 +1,124 @@
+const nodemailer = require('nodemailer');
+
+const createTransporter = () => {
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
+
+  if (!user || !pass) {
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user,
+      pass,
+    },
+  });
+};
+
+const sendMail = async ({ to, subject, text, html }) => {
+  const transporter = createTransporter();
+
+  if (!transporter) {
+    throw new Error('GMAIL_USER and GMAIL_APP_PASSWORD must be configured');
+  }
+
+  await transporter.sendMail({
+    from: process.env.GMAIL_USER,
+    to,
+    subject,
+    text,
+    html,
+  });
+};
+
+const sendVerificationCodeEmail = async ({ to, code }) => {
+  await sendMail({
+    to,
+    subject: 'Verify your Skill Swap email',
+    text: `Your Skill Swap verification code is ${code}. It will expire in 10 minutes.`,
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a;">
+        <h2 style="margin-bottom: 12px;">Verify your Skill Swap email</h2>
+        <p>Your verification code is:</p>
+        <div style="font-size: 32px; font-weight: 700; letter-spacing: 8px; margin: 16px 0;">${code}</div>
+        <p>This code expires in 10 minutes.</p>
+      </div>
+    `,
+  });
+};
+
+const sendRequestReceivedEmail = async ({ to, senderName, skillOffered, skillRequested, message }) => {
+  await sendMail({
+    to,
+    subject: `${senderName} requested your ${skillRequested} skill`,
+    text: `${senderName} sent you a skill swap request requesting your ${skillRequested} skill. Offered: ${skillOffered}. Message: ${message}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a;">
+        <h2 style="margin-bottom: 12px;">New skill swap request</h2>
+        <p><strong>${senderName}</strong> sent you a request.</p>
+        <p><strong>Requested from you:</strong> ${skillRequested}</p>
+        <p><strong>Offered:</strong> ${skillOffered}</p>
+        <p><strong>Message:</strong> ${message}</p>
+        <p>Open Skill Swap to review the request.</p>
+      </div>
+    `,
+  });
+};
+
+const sendRequestSentConfirmationEmail = async ({ to, receiverName, skillOffered, skillRequested }) => {
+  await sendMail({
+    to,
+    subject: `Your ${skillRequested} request to ${receiverName} was sent`,
+    text: `Your skill swap request to ${receiverName} has been sent. You requested: ${skillRequested}. You offered: ${skillOffered}.`,
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a;">
+        <h2 style="margin-bottom: 12px;">Request sent</h2>
+        <p>Your request to <strong>${receiverName}</strong> has been sent.</p>
+        <p><strong>You requested:</strong> ${skillRequested}</p>
+        <p><strong>You offered:</strong> ${skillOffered}</p>
+        <p>We’ll notify you again when the request is accepted.</p>
+      </div>
+    `,
+  });
+};
+
+const sendPendingRequestReminderEmail = async ({ to, pendingCount }) => {
+  await sendMail({
+    to,
+    subject: 'You have pending skill swap requests',
+    text: `You currently have ${pendingCount} pending skill swap requests waiting for your response.`,
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a;">
+        <h2 style="margin-bottom: 12px;">Pending requests reminder</h2>
+        <p>You currently have <strong>${pendingCount}</strong> pending skill swap requests waiting for your response.</p>
+        <p>Open Skill Swap to review them.</p>
+      </div>
+    `,
+  });
+};
+
+const sendRequestAcceptedEmail = async ({ to, senderName, receiverName }) => {
+  await sendMail({
+    to,
+    subject: `${receiverName} accepted your skill swap request`,
+    text: `${receiverName} accepted your request. You can now connect and chat with them in Skill Swap.`,
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a;">
+        <h2 style="margin-bottom: 12px;">Request accepted</h2>
+        <p><strong>${receiverName}</strong> accepted your request, ${senderName}.</p>
+        <p>You can now connect and chat with them inside Skill Swap.</p>
+      </div>
+    `,
+  });
+};
+
+module.exports = {
+  sendVerificationCodeEmail,
+  sendRequestSentConfirmationEmail,
+  sendRequestReceivedEmail,
+  sendPendingRequestReminderEmail,
+  sendRequestAcceptedEmail,
+  sendMail,
+};
