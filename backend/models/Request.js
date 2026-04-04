@@ -15,7 +15,8 @@ const requestSchema = new mongoose.Schema(
         skillOfferedId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Skill',
-            required: true,
+            required: false,
+            default: null,
         },
         skillRequestedId: {
             type: mongoose.Schema.Types.ObjectId,

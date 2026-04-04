@@ -20,12 +20,16 @@ exports.createRequest = async (req, res) => {
             return res.status(404).json({ error: 'Receiver not found' });
         }
 
-        // Validate that skills exist
-        const skillOffered = await Skill.findById(skillOfferedId);
+        // Validate requested skill and optionally offered skill when provided.
         const skillRequested = await Skill.findById(skillRequestedId);
+        const skillOffered = skillOfferedId ? await Skill.findById(skillOfferedId) : null;
 
-        if (!skillOffered || !skillRequested) {
+        if (!skillRequested) {
             return res.status(404).json({ error: 'Skill not found' });
+        }
+
+        if (skillOfferedId && !skillOffered) {
+            return res.status(404).json({ error: 'Offered skill not found' });
         }
 
         // Allow separate requests per requested skill; block only duplicate active requests for same skill.
@@ -47,7 +51,7 @@ exports.createRequest = async (req, res) => {
         const request = new Request({
             senderId: req.user.id,
             receiverId,
-            skillOfferedId,
+            skillOfferedId: skillOffered ? skillOffered._id : null,
             skillRequestedId,
             message,
         });
@@ -62,7 +66,7 @@ exports.createRequest = async (req, res) => {
         void sendRequestReceivedEmail({
             to: receiver.email,
             senderName: sender?.name || 'A user',
-            skillOffered: skillOffered.name,
+            skillOffered: skillOffered?.name || 'No skill listed yet',
             skillRequested: skillRequested.name,
             message,
         }).catch((mailError) => console.error('Failed to send request email:', mailError.message));
@@ -70,7 +74,7 @@ exports.createRequest = async (req, res) => {
         void sendRequestSentConfirmationEmail({
             to: sender?.email,
             receiverName: receiver.name,
-            skillOffered: skillOffered.name,
+            skillOffered: skillOffered?.name || 'No skill listed yet',
             skillRequested: skillRequested.name,
         }).catch((mailError) => console.error('Failed to send request confirmation email:', mailError.message));
 
