@@ -7,9 +7,10 @@ const validation = require('../middleware/validation');
 // Public Routes
 router.post('/register', validation.validateRegister, register);
 router.post('/login', validation.validateLogin, login);
+router.post('/logout', (req, res) => res.status(200).json({ message: 'Logged out successfully' }));
 router.post('/promote-admin', promoteAdmin);
-router.post('/send-verification-code', sendVerificationCode);
-router.post('/verify-email-code', verifyEmailCode);
+router.post('/send-verification-code', validation.validateEmailVerificationSend, sendVerificationCode);
+router.post('/verify-email-code', validation.validateEmailVerificationCode, verifyEmailCode);
 
 // Protected Routes
 router.get('/me', authenticate, getCurrentUser);
