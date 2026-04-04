@@ -114,9 +114,11 @@ exports.sendVerificationCode = async (req, res) => {
             expiresAt: new Date(Date.now() + 10 * 60 * 1000),
         });
 
-        await sendVerificationCodeEmail({
+        void sendVerificationCodeEmail({
             to: normalizedEmail,
             code: verificationCode,
+        }).catch((mailError) => {
+            console.error('Failed to send verification code email:', mailError.message);
         });
 
         res.status(200).json({
