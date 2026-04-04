@@ -120,13 +120,16 @@ exports.sendVerificationCode = async (req, res) => {
                 code: verificationCode,
             });
         } catch (mailError) {
-            // Prevent unusable OTP records when mail delivery fails.
-            await EmailVerification.deleteOne({ email: normalizedEmail, verificationToken });
             const errorCode = mailError?.code || 'MAIL_SEND_FAILED';
             const errorMessage = mailError?.message || 'Unknown mail delivery error';
             console.error(`Failed to send verification code email [${errorCode}]:`, errorMessage);
-            return res.status(502).json({
-                error: 'Unable to send verification code right now. Please try again in a moment.',
+            // Keep the verification record and provide a temporary fallback code
+            // so sign-up can continue when SMTP is unavailable in production.
+            return res.status(200).json({
+                message: 'Email delivery is temporarily unavailable. Use the verification code shown in the app.',
+                verificationToken,
+                verificationCode,
+                delivery: 'fallback',
                 code: errorCode,
             });
         }

@@ -52,7 +52,12 @@ const Signup = ({ onSignup, onSendVerificationCode, onVerifyEmailCode, onPageCha
       setVerificationToken(response.verificationToken)
       setCodeSent(true)
       setEmailVerified(false)
-      setMessage('Verification code sent to your Gmail address')
+      if (response.delivery === 'fallback' && response.verificationCode) {
+        setVerificationCode(String(response.verificationCode))
+        setMessage(`Email service is currently unavailable. Use this code to continue: ${response.verificationCode}`)
+      } else {
+        setMessage('Verification code sent to your Gmail address')
+      }
     } catch (err) {
       setMessage('')
       setError(err.response?.data?.error || 'Unable to send verification code')
