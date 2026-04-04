@@ -122,8 +122,13 @@ exports.sendVerificationCode = async (req, res) => {
         } catch (mailError) {
             // Prevent unusable OTP records when mail delivery fails.
             await EmailVerification.deleteOne({ email: normalizedEmail, verificationToken });
-            console.error('Failed to send verification code email:', mailError.message);
-            return res.status(502).json({ error: 'Unable to send verification code right now. Please try again in a moment.' });
+            const errorCode = mailError?.code || 'MAIL_SEND_FAILED';
+            const errorMessage = mailError?.message || 'Unknown mail delivery error';
+            console.error(`Failed to send verification code email [${errorCode}]:`, errorMessage);
+            return res.status(502).json({
+                error: 'Unable to send verification code right now. Please try again in a moment.',
+                code: errorCode,
+            });
         }
 
         res.status(200).json({
