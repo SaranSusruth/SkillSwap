@@ -22,6 +22,7 @@ const Marketplace = ({ onNavigate }) => {
   const [reviewComment, setReviewComment] = useState('')
   const [reviewSubmitting, setReviewSubmitting] = useState(false)
   const [reviewError, setReviewError] = useState('')
+  const [sendingRequestForUser, setSendingRequestForUser] = useState(null)
 
   const categories = ['All', 'programming', 'design', 'languages', 'music', 'sports', 'arts', 'business', 'other']
   const competencyLevels = ['All', 'beginner', 'intermediate', 'advanced']
@@ -151,6 +152,7 @@ const Marketplace = ({ onNavigate }) => {
 
   const onSendRequest = async (user, requestedSkillIdFromSelection, requestedSkillNameFromSelection) => {
     const receiverId = user._id || user.id
+    const receiverIdString = String(receiverId || '')
 
     if (!receiverId) {
       addNotification({ title: 'Connect failed', message: 'Unable to identify selected user.' })
@@ -164,22 +166,18 @@ const Marketplace = ({ onNavigate }) => {
     const requestedSkillId = requestedSkillIdFromSelection || extractSkillId(targetSkills[0])
     const requestedSkillName = requestedSkillNameFromSelection || extractSkillName(targetSkills[0])
 
-    if (!offeredSkillId) {
-      addNotification({ title: 'Add your skill first', message: 'Please add at least one skill in your profile before sending a request.' })
-      return
-    }
-
     if (!requestedSkillId) {
       addNotification({ title: 'No target skill found', message: 'This user has no visible skills to request yet.' })
       return
     }
 
     try {
+      setSendingRequestForUser(receiverIdString)
       await sendRequest({
         receiverId,
         skillOfferedId: offeredSkillId,
         skillRequestedId: requestedSkillId,
-        message: `Hi ${user.name}, I would like to request your ${requestedSkillName} skill and exchange skills with you.`,
+        message: `Hi ${user.name}, I would like to request your ${requestedSkillName} skill and connect for learning.`,
       })
       addNotification({ title: 'Request sent', message: `Your request to ${user.name} for ${requestedSkillName} has been sent.` })
     } catch (error) {
@@ -187,6 +185,8 @@ const Marketplace = ({ onNavigate }) => {
         title: 'Request failed',
         message: error.response?.data?.error || 'Unable to send request right now.',
       })
+    } finally {
+      setSendingRequestForUser(null)
     }
   }
 
@@ -360,6 +360,9 @@ const Marketplace = ({ onNavigate }) => {
                 const connectionRequest = getConnectionRequest(user, selectedRequestedSkillId)
                 const isAccepted = connectionRequest?.status === 'accepted'
                 const isPending = connectionRequest?.status === 'pending'
+                const hasTargetSkill = requestableSkills.length > 0 && Boolean(selectedRequestedSkillId)
+                const isSendingThisUser = sendingRequestForUser === userId
+                const isSendDisabled = isPending || !hasTargetSkill || isSendingThisUser
                 const buttonAction = isAccepted
                   ? () => onOpenChat(connectionRequest)
                   : () => onSendRequest(user, selectedRequestedSkillId, selectedRequestedSkillName)
@@ -412,7 +415,7 @@ const Marketplace = ({ onNavigate }) => {
                         <select
                           value={selectedRequestedSkillId}
                           onChange={(event) => onRequestedSkillChange(userId, event.target.value)}
-                          disabled={isPending || requestableSkills.length === 0}
+                          disabled={isPending || requestableSkills.length === 0 || isSendingThisUser}
                           className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-semibold disabled:bg-slate-100 disabled:text-slate-500"
                         >
                           {requestableSkills.length > 0 ? (
@@ -431,17 +434,25 @@ const Marketplace = ({ onNavigate }) => {
                     <div className="flex gap-2">
                       <button
                         onClick={buttonAction}
-                        disabled={isPending}
+                        disabled={!isAccepted && isSendDisabled}
                         className={`flex-1 rounded-lg py-3 px-4 text-sm font-bold shadow-md hover:shadow-lg transition-all duration-200 border ${
                           isAccepted
                             ? 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700'
-                            : isPending
+                            : isSendDisabled
                               ? 'bg-slate-200 text-slate-500 border-slate-300 cursor-not-allowed'
                               : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 border-blue-800'
                         }`}
                         type="button"
                       >
-                        {isAccepted ? 'Connect' : isPending ? 'Pending' : 'Send Request'}
+                        {isAccepted
+                          ? 'Connect'
+                          : isSendingThisUser
+                            ? 'Sending...'
+                            : isPending
+                              ? 'Pending'
+                              : !hasTargetSkill
+                                  ? 'No Skill Available'
+                                  : 'Send Request'}
                       </button>
                       <button
                         onClick={() => onReportUser(user)}
