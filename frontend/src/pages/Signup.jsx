@@ -226,7 +226,7 @@ const Signup = ({ onSignup, onSendVerificationCode, onVerifyEmailCode, onPageCha
 
           <button
             type="submit"
-            disabled={loading || !emailVerified}
+            disabled={loading}
             className="w-full rounded-lg bg-blue-600 text-white py-3 text-lg font-bold hover:bg-blue-700 transition-colors disabled:opacity-70 shadow-md hover:shadow-lg"
           >
             {loading ? 'Processing...' : 'Create Account'}
