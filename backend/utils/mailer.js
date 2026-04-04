@@ -5,7 +5,13 @@ const dns = require('dns');
 // Prefer IPv4 resolution so mail delivery works reliably in production.
 dns.setDefaultResultOrder('ipv4first');
 
-const createTransporter = () => {
+const SMTP_PROFILES = [
+  // Try SMTPS first because some hosts time out on STARTTLS upgrade.
+  { port: 465, secure: true },
+  { port: 587, secure: false },
+];
+
+const getAuth = () => {
   const user = process.env.GMAIL_USER;
   const pass = process.env.GMAIL_APP_PASSWORD;
 
@@ -13,35 +19,50 @@ const createTransporter = () => {
     return null;
   }
 
+  return { user, pass };
+};
+
+const createTransporter = ({ port, secure }, auth) => {
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
+    port,
+    secure,
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,
     dnsTimeout: 8000,
-    auth: {
-      user,
-      pass,
-    },
+    auth,
   });
 };
 
 const sendMail = async ({ to, subject, text, html }) => {
-  const transporter = createTransporter();
+  const auth = getAuth();
 
-  if (!transporter) {
+  if (!auth) {
     throw new Error('GMAIL_USER and GMAIL_APP_PASSWORD must be configured');
   }
 
-  await transporter.sendMail({
-    from: process.env.GMAIL_USER,
-    to,
-    subject,
-    text,
-    html,
-  });
+  let lastError = null;
+
+  for (const profile of SMTP_PROFILES) {
+    const transporter = createTransporter(profile, auth);
+
+    try {
+      await transporter.sendMail({
+        from: process.env.GMAIL_USER,
+        to,
+        subject,
+        text,
+        html,
+      });
+      return;
+    } catch (error) {
+      lastError = error;
+      console.error(`SMTP send failed on port ${profile.port}:`, error.message);
+    }
+  }
+
+  throw lastError || new Error('Mail send failed');
 };
 
 const sendVerificationCodeEmail = async ({ to, code }) => {
