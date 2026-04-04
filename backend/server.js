@@ -33,7 +33,8 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files from uploads directory
 app.use('/uploads', express.static('uploads'));
 
-
+console.log('GMAIL_USER set:', !!process.env.GMAIL_USER);
+console.log('GMAIL_APP_PASSWORD set:', !!process.env.GMAIL_APP_PASSWORD);
 connectDB();
 
 // Routes
