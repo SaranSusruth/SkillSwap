@@ -58,7 +58,9 @@ const Sidebar = ({ isOpen, onClose, onNavigate }) => {
               )}
               <div className="flex-1">
                 <p className="text-sm font-bold">{currentUser.name}</p>
-                <p className="text-xs text-blue-100 capitalize">{currentUser.role || 'member'}</p>
+                {currentUser.role !== 'both' && (
+                  <p className="text-xs text-blue-100 capitalize">{currentUser.role || 'member'}</p>
+                )}
               </div>
             </div>
             <div className="text-center text-xs text-blue-100 font-semibold">
@@ -137,7 +139,9 @@ const Sidebar = ({ isOpen, onClose, onNavigate }) => {
               )}
               <div className="flex-1">
                 <p className="text-sm font-bold">{currentUser.name}</p>
-                <p className="text-xs text-blue-100 capitalize">{currentUser.role || 'member'}</p>
+                {currentUser.role !== 'both' && (
+                  <p className="text-xs text-blue-100 capitalize">{currentUser.role || 'member'}</p>
+                )}
               </div>
             </div>
             <div className="text-center text-xs text-blue-100 font-semibold">
