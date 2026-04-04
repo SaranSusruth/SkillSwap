@@ -9,14 +9,21 @@ dotenv.config();
 const app = express();
 
 // Middleware
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000,http://localhost:5173')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+const allowedOriginRegex = (process.env.CORS_ORIGIN_REGEX || '^https:\\/\\/skill-swap.*\\.vercel\\.app$')
+  .split(',')
+  .map((pattern) => pattern.trim())
+  .filter(Boolean)
+  .map((pattern) => new RegExp(pattern, 'i'));
+
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    const matchesRegex = origin && allowedOriginRegex.some((regex) => regex.test(origin));
+    if (!origin || allowedOrigins.includes(origin) || matchesRegex) {
       callback(null, true);
     } else {
       callback(new Error(`CORS policy does not allow access from origin ${origin}`));
