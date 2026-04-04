@@ -1,4 +1,9 @@
 const nodemailer = require('nodemailer');
+const dns = require('dns');
+
+// Render environments may not have outbound IPv6 for Gmail SMTP.
+// Prefer IPv4 resolution so mail delivery works reliably in production.
+dns.setDefaultResultOrder('ipv4first');
 
 const createTransporter = () => {
   const user = process.env.GMAIL_USER;
@@ -9,7 +14,9 @@ const createTransporter = () => {
   }
 
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
     auth: {
       user,
       pass,
