@@ -67,7 +67,9 @@ const Signup = ({ onSignup, onSendVerificationCode, onVerifyEmailCode, onPageCha
       }
     } catch (err) {
       setMessage('')
-      setError(err.response?.data?.error || 'Unable to send verification code')
+      const backendError = err.response?.data?.error || err.response?.data?.message
+      const networkError = err.message && err.message !== 'Network Error' ? err.message : ''
+      setError(backendError || networkError || 'Unable to send verification code. Please try again.')
     } finally {
       setLoading(false)
     }
