@@ -11,45 +11,50 @@ const SMTP_PROFILES = [
   { port: 587, secure: false },
 ];
 
-const getAuth = () => {
-  const user = process.env.GMAIL_USER;
-  const pass = process.env.GMAIL_APP_PASSWORD;
+const getMailConfig = () => {
+  const host = process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp.gmail.com';
+  const user = process.env.SMTP_USER || process.env.EMAIL_USER || process.env.GMAIL_USER;
+  const pass = process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.GMAIL_APP_PASSWORD;
+  const from = process.env.SMTP_FROM || process.env.EMAIL_FROM || user;
 
   if (!user || !pass) {
     return null;
   }
 
-  return { user, pass };
+  return { host, user, pass, from };
 };
 
-const createTransporter = ({ port, secure }, auth) => {
+const createTransporter = ({ port, secure }, mailConfig) => {
   return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
+    host: mailConfig.host,
     port,
     secure,
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,
     dnsTimeout: 8000,
-    auth,
+    auth: {
+      user: mailConfig.user,
+      pass: mailConfig.pass,
+    },
   });
 };
 
 const sendMail = async ({ to, subject, text, html }) => {
-  const auth = getAuth();
+  const mailConfig = getMailConfig();
 
-  if (!auth) {
-    throw new Error('GMAIL_USER and GMAIL_APP_PASSWORD must be configured');
+  if (!mailConfig) {
+    throw new Error('SMTP_USER/SMTP_PASS or GMAIL_USER/GMAIL_APP_PASSWORD must be configured');
   }
 
   let lastError = null;
 
   for (const profile of SMTP_PROFILES) {
-    const transporter = createTransporter(profile, auth);
+    const transporter = createTransporter(profile, mailConfig);
 
     try {
       await transporter.sendMail({
-        from: process.env.GMAIL_USER,
+        from: mailConfig.from,
         to,
         subject,
         text,

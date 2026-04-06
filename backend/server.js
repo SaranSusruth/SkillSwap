@@ -9,12 +9,20 @@ dotenv.config();
 const app = express();
 
 // Middleware
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000,http://localhost:5173')
+const defaultAllowedOrigins = ['http://localhost:3000', 'http://localhost:5173'];
+const configuredOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-const allowedOriginRegex = (process.env.CORS_ORIGIN_REGEX || '^https:\\/\\/skill-swap.*\\.vercel\\.app$')
+const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...configuredOrigins])];
+
+const allowedOriginRegex = [
+  process.env.CORS_ORIGIN_REGEX || '',
+  '^https:\/\/.*\.vercel\.app$',
+  '^https:\/\/.*\.onrender\.com$',
+]
+  .join(',')
   .split(',')
   .map((pattern) => pattern.trim())
   .filter(Boolean)
